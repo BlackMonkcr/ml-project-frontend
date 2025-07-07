@@ -1,9 +1,10 @@
 """
-Página para analizar letras personalizadas
+Página para analizar letras personalizadas - Sistema ML integrado
 """
 
 import streamlit as st
-from utils.api_client import analyze_words_safe, predict_lyrics_safe, format_confidence, get_confidence_description
+from utils.ml_client import get_client, format_confidence, get_confidence_description
+from utils.ml_status import require_ml_system
 
 def show_analyze_page():
     """Mostrar la página de análisis de letras personalizadas"""
@@ -65,20 +66,25 @@ def show_analyze_page():
 
 def perform_basic_analysis(lyrics: str, title: str = "", artist: str = ""):
     """
-    Realizar análisis básico de las letras
+    Realizar análisis básico de las letras usando ML integrado
     
     Args:
         lyrics: Letras de la canción
         title: Título opcional
         artist: Artista opcional
     """
+    # Verificar que el sistema ML esté disponible
+    if not require_ml_system():
+        return
+    
     st.markdown("---")
     st.markdown("### 🎯 Resultado del Análisis")
     
     with st.spinner("Analizando contenido..."):
-        result = predict_lyrics_safe(lyrics, title or None, artist or None)
+        client = get_client()
+        result = client.predict_lyrics(lyrics, title or None, artist or None)
     
-    if result:
+    if result and "error" not in result:
         # Mostrar resultado principal
         col1, col2 = st.columns(2)
         
@@ -140,24 +146,30 @@ def perform_basic_analysis(lyrics: str, title: str = "", artist: str = ""):
             st.info("💡 Para ver qué palabras específicas influyeron en esta decisión, usa el **Análisis Detallado**.")
         
     else:
-        st.error("❌ Error al analizar las letras. Verifica que la API esté funcionando correctamente.")
+        error_msg = result.get("error", "Error desconocido") if result else "No se pudo obtener resultado"
+        st.error(f"❌ Error al analizar las letras: {error_msg}")
 
 def perform_detailed_analysis(lyrics: str, title: str = "", artist: str = ""):
     """
-    Realizar análisis detallado palabra por palabra
+    Realizar análisis detallado palabra por palabra usando ML integrado
     
     Args:
         lyrics: Letras de la canción
         title: Título opcional
         artist: Artista opcional
     """
+    # Verificar que el sistema ML esté disponible
+    if not require_ml_system():
+        return
+        
     st.markdown("---")
     st.markdown("### 🔬 Análisis Detallado")
     
     with st.spinner("Analizando cada palabra..."):
-        analysis = analyze_words_safe(lyrics, title or None, artist or None)
+        client = get_client()
+        analysis = client.analyze_words(lyrics, title or None, artist or None)
     
-    if analysis:
+    if analysis and "error" not in analysis:
         # Resultado general
         overall = analysis['overall_prediction']
         

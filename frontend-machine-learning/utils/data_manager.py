@@ -12,6 +12,9 @@ import requests
 import hashlib
 import zipfile
 
+# Imports para funciones de cache seguras
+from .cache_helpers import cached_load_dataset, display_dataset_status, get_dataset_stats
+
 # Ruta al dataset
 DATASET_PATH = "data/spotify_dataset_sin_duplicados_4.csv"
 
@@ -23,59 +26,33 @@ class DataManager:
         self._df = None
         self._loaded = False
 
-    @st.cache_data
-    def load_dataset(_self) -> pd.DataFrame:
+    def load_dataset(self) -> pd.DataFrame:
         """
-        Cargar el dataset con cache de Streamlit
-        Incluye manejo de archivos grandes
+        Cargar el dataset con manejo de errores y widgets
 
         Returns:
             DataFrame con el dataset
         """
-        try:
-            if not os.path.exists(_self.dataset_path):
-                st.warning(f"Dataset no encontrado en: {_self.dataset_path}")
-                # Intentar manejar dataset grande
-                df = handle_large_dataset()
-                if df is not None:
-                    _self._df = df
-                    _self._loaded = True
-                    return df
-                return pd.DataFrame()
+        # Usar función de cache segura
+        df, message, success = cached_load_dataset(self.dataset_path)
 
-            # Cargar solo las columnas necesarias para optimizar memoria
-            columns_to_load = [
-                'Artist(s)', 'song', 'text', 'Genre', 'Explicit',
-                'Similar Artist 1', 'Similar Song 1', 'Similarity Score 1',
-                'Similar Artist 2', 'Similar Song 2', 'Similarity Score 2',
-                'Similar Artist 3', 'Similar Song 3', 'Similarity Score 3'
-            ]
-
-            df = pd.read_csv(_self.dataset_path, usecols=columns_to_load)
-
-            # Limpiar datos
-            df = df.dropna(subset=['song', 'Artist(s)', 'text'])
-            df = df.reset_index(drop=True)
-
-            # Normalizar nombres de columnas
-            df = df.rename(columns={
-                'Artist(s)': 'artist',
-                'song': 'title',
-                'text': 'lyrics',
-                'Genre': 'genre',
-                'Explicit': 'explicit'
-            })
-
-            # Convertir explicit a booleano
-            df['is_explicit'] = df['explicit'].str.lower() == 'yes'
-
-            _self._df = df
-            _self._loaded = True
-
+        if success and not df.empty:
+            self._df = df
+            self._loaded = True
+            display_dataset_status(df, message, success)
             return df
-
-        except Exception as e:
-            st.error(f"Error cargando dataset: {e}")
+        elif not success and "no encontrado" in message.lower():
+            # Dataset no encontrado, manejar dataset grande
+            st.warning(f"📁 {message}")
+            df_large = handle_large_dataset()
+            if df_large is not None:
+                self._df = df_large
+                self._loaded = True
+                return df_large
+            return pd.DataFrame()
+        else:
+            # Error de carga
+            display_dataset_status(df, message, success)
             return pd.DataFrame()
 
     @property
@@ -280,38 +257,14 @@ class DataManager:
 # Instancia global del administrador de datos
 data_manager = DataManager()
 
-@st.cache_data
 def load_dataset_info() -> Dict[str, Any]:
-    """Cargar información básica del dataset"""
+    """Cargar información básica del dataset sin cache con widgets"""
     df = data_manager.get_dataset()
+    return get_dataset_stats(df)
 
-    if df.empty:
-        return {
-            'total_songs': 0,
-            'explicit_count': 0,
-            'explicit_percentage': 0.0
-        }
-
-    total = len(df)
-    explicit_count = df['is_explicit'].sum()
-    explicit_percentage = (explicit_count / total) * 100 if total > 0 else 0
-
-    return {
-        'total_songs': total,
-        'explicit_count': int(explicit_count),
-        'explicit_percentage': explicit_percentage
-    }
-
-@st.cache_data
 def get_quick_stats() -> Dict[str, Any]:
     """Obtener estadísticas rápidas del dataset"""
-    info = load_dataset_info()
-
-    return {
-        'total': info['total_songs'],
-        'explicit': info['explicit_count'],
-        'explicit_percentage': info['explicit_percentage']
-    }
+    return load_dataset_info()
 
 def search_songs_paginated(title_query: str = "", artist_query: str = "",
                           page: int = 1, per_page: int = 10) -> Tuple[List[Dict], int, int]:
@@ -396,7 +349,7 @@ DATA_SOURCES = {
 def download_from_url(url: str, output_path: Path) -> bool:
     """Descargar archivo desde URL directa con barra de progreso"""
     try:
-        with st.spinner(f"Descargando dataset..."):
+        with st.spinner("Descargando dataset..."):
             response = requests.get(url, stream=True)
             response.raise_for_status()
 

@@ -1,15 +1,16 @@
 """
 Aplicación principal de Streamlit para el análisis de letras explícitas
-Incluye manejo de archivos grandes y conexión con API backend
+Sistema ML integrado - Sin dependencia de API externa
 """
 
 import streamlit as st
 import pandas as pd
 from pathlib import Path
 
-# Imports para manejo de datos y API
-from utils.data_manager import DataManager, handle_large_dataset
-from utils.api_manager import show_api_status_widget, require_api_connection, api_manager
+# Imports para manejo de datos y ML integrado
+from utils.data_manager import DataManager
+from utils.ml_status import show_ml_status_widget, require_ml_system, show_ml_info
+from utils.ml_client import get_client
 
 # Configuración de la página
 st.set_page_config(
@@ -99,14 +100,17 @@ st.markdown("""
 
 def main():
     """Función principal de la aplicación"""
-
-    # Mostrar estado de la API en la sidebar
-    show_api_status_widget()
-
+    
+    # Mostrar estado del sistema ML en la sidebar
+    show_ml_status_widget()
+    
     # Header principal
     st.markdown('<h1 class="main-header">🎵 Explicit Lyrics Analyzer</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Análisis inteligente de contenido explícito en letras de canciones</p>', unsafe_allow_html=True)
-
+    
+    # Mostrar info del sistema ML
+    show_ml_info()
+    
     # Verificar disponibilidad del dataset
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📊 Estado del Dataset")
@@ -116,11 +120,14 @@ def main():
         df = data_manager.load_dataset()
 
         if not df.empty:
-            st.sidebar.success(f"✅ Dataset: {len(df)} canciones")
+            from utils.cache_helpers import get_dataset_stats
+            stats = get_dataset_stats(df)
+            st.sidebar.success(f"✅ Dataset: {stats['total_songs']} canciones")
+            st.sidebar.info(f"🎤 {stats['artists']} artistas")
         else:
             st.sidebar.warning("⚠️ Dataset no disponible")
 
-    except Exception as e:
+    except Exception:
         st.sidebar.error("❌ Error cargando dataset")
 
     # Sidebar para navegación
