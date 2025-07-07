@@ -1,10 +1,15 @@
 """
 Aplicación principal de Streamlit para el análisis de letras explícitas
+Incluye manejo de archivos grandes y conexión con API backend
 """
 
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+
+# Imports para manejo de datos y API
+from utils.data_manager import DataManager, handle_large_dataset
+from utils.api_manager import show_api_status_widget, require_api_connection, api_manager
 
 # Configuración de la página
 st.set_page_config(
@@ -94,24 +99,43 @@ st.markdown("""
 
 def main():
     """Función principal de la aplicación"""
-    
+
+    # Mostrar estado de la API en la sidebar
+    show_api_status_widget()
+
     # Header principal
     st.markdown('<h1 class="main-header">🎵 Explicit Lyrics Analyzer</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Análisis inteligente de contenido explícito en letras de canciones</p>', unsafe_allow_html=True)
-    
-    # Sidebar para navegación
-    st.sidebar.title("🔧 Navegación")
+
+    # Verificar disponibilidad del dataset
     st.sidebar.markdown("---")
-    
+    st.sidebar.markdown("### 📊 Estado del Dataset")
+
+    try:
+        data_manager = DataManager()
+        df = data_manager.load_dataset()
+
+        if not df.empty:
+            st.sidebar.success(f"✅ Dataset: {len(df)} canciones")
+        else:
+            st.sidebar.warning("⚠️ Dataset no disponible")
+
+    except Exception as e:
+        st.sidebar.error("❌ Error cargando dataset")
+
+    # Sidebar para navegación
+    st.sidebar.markdown("---")
+    st.sidebar.title("🔧 Navegación")
+
     page = st.sidebar.radio(
         "Selecciona una función:",
         ["🏠 Inicio", "🔍 Buscar Canciones", "📝 Analizar Letras", "💡 Sugerencias"]
     )
-    
+
     # Información de la API
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📡 Estado de la API")
-    
+
     # Importar utilidades
     try:
         from utils.api_client import check_api_status
@@ -123,7 +147,7 @@ def main():
             st.sidebar.caption("Inicia la API con: python api.py")
     except Exception:
         st.sidebar.warning("⚠️ Verificando API...")
-    
+
     # Información del dataset
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📊 Dataset")
@@ -138,7 +162,7 @@ def main():
             st.sidebar.caption("Verifica que el CSV esté en data/")
     except Exception:
         st.sidebar.info("📊 Cargando información...")
-    
+
     # Navegación a páginas
     if page == "🏠 Inicio":
         show_home_page()
@@ -166,51 +190,51 @@ def main():
 
 def show_home_page():
     """Página de inicio"""
-    
+
     col1, col2, col3 = st.columns([1, 2, 1])
-    
+
     with col2:
         st.markdown("### 🎯 ¿Qué puedes hacer aquí?")
-        
+
         st.markdown("""
         **🔍 Buscar Canciones**
         - Encuentra canciones por título o artista
         - Ve si son explícitas o no
         - Explora el contenido del dataset
-        
+
         **📝 Analizar Letras**
         - Escribe tus propias letras
         - Obtén un análisis detallado
         - Ve qué palabras son consideradas explícitas
-        
+
         **💡 Sugerencias**
         - Próximamente: Sistema de recomendaciones
         - Canciones similares basadas en IA
         """)
-        
+
         st.markdown("---")
-        
+
         # Estadísticas rápidas
         st.markdown("### 📈 Estadísticas del Dataset")
-        
+
         try:
             from utils.data_manager import get_quick_stats
             stats = get_quick_stats()
-            
+
             col_a, col_b, col_c = st.columns(3)
-            
+
             with col_a:
                 st.metric("Total Canciones", f"{stats['total']:,}")
-            
+
             with col_b:
                 st.metric("Canciones Explícitas", f"{stats['explicit']:,}")
-            
+
             with col_c:
                 st.metric("% Explícitas", f"{stats['explicit_percentage']:.1f}%")
-                
+
         except Exception as e:
             st.info("Cargando estadísticas del dataset...")
-        
+
         st.markdown("---")
         st.markdown("### 🚀 ¡Comienza explorando!")
         st.markdown("Usa el menú de la izquierda para navegar entre las diferentes funciones.")
