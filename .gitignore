@@ -1,0 +1,9 @@
+# Large dataset files
+Frontend Machine Learning/data/spotify_dataset_sin_duplicados_4.csv
+*.csv
+
+# Common files to ignore
+.DS_Store
+node_modules/
+*.log
+.env
