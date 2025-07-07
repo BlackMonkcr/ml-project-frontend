@@ -310,7 +310,7 @@ Dancing under stars so bright
 Everything will be alright
         """)
 
-        if st.button("🔬 Analizar Ejemplo Limpio"):
+        if st.button("🔬 Analizar Ejemplo Limpio", key="analyze_clean_example"):
             example_clean = "I love you more than words can say. You make me happy every day. Dancing under stars so bright. Everything will be alright."
             perform_basic_analysis(example_clean, "Example Clean Song", "Test Artist")
 

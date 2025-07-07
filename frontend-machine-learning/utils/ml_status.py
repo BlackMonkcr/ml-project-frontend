@@ -31,7 +31,7 @@ def show_ml_status_widget():
 
                     col1, col2 = st.columns(2)
                     with col1:
-                        if st.button("🔄 Cargar Modelo"):
+                        if st.button("🔄 Cargar Modelo", key="ml_status_load_model"):
                             with st.spinner("Cargando modelo..."):
                                 reload_result = client.reload_model()
                                 if reload_result.get("success"):
@@ -41,40 +41,40 @@ def show_ml_status_widget():
                                     st.error("Error cargando modelo")
 
                     with col2:
-                        if st.button("🔍 Verificar"):
+                        if st.button("🔍 Verificar", key="ml_status_verify"):
                             st.rerun()
 
             else:
-                # API externa (fallback)
-                st.info("🌐 **Modo: API Externa**")
+                # Sistema local no disponible
+                st.warning("⚠️ **Sistema ML Inicializando**")
 
                 if status["status"] == "healthy":
-                    st.success("✅ API Conectada")
+                    st.success("✅ Sistema Cargando")
                 elif status["status"] == "unhealthy":
-                    st.warning("⚠️ API disponible, modelo no cargado")
+                    st.warning("⚠️ Sistema disponible, modelo no cargado")
                 else:
-                    st.error("❌ API no disponible")
+                    st.error("❌ Sistema no disponible")
 
-                    # Instrucciones para API
-                    with st.expander("🔧 Iniciar API"):
+                    # Instrucciones para solución local
+                    with st.expander("🔧 Solucionar Problema"):
                         st.markdown("""
-                        **Para iniciar la API:**
+                        **Para solucionar el problema:**
                         ```bash
-                        cd ../ml-project-models/
-                        python api.py
+                        # Verificar modelo
+                        ls -la saved_models/
+
+                        # Reentrenar si es necesario
+                        python retrain_local_model.py
                         ```
 
-                        O usar el script automático:
-                        ```bash
-                        ./start_api.sh
-                        ```
+                        **Todo es local, sin APIs externas.**
                         """)
 
             # Información adicional
             st.caption(f"🕐 {status.get('timestamp', 'N/A')}")
 
             # Botón de recarga general
-            if st.button("🔄 Actualizar Estado"):
+            if st.button("🔄 Actualizar Estado", key="ml_status_refresh"):
                 # Limpiar cliente global para forzar re-detección
                 from . import ml_client
                 ml_client.smart_client = None
@@ -84,21 +84,18 @@ def show_ml_status_widget():
             st.error("❌ Error en sistema ML")
             st.caption(f"Error: {str(e)}")
 
-            # Modo degradado - mostrar instrucciones
-            with st.expander("⚠️ Modo Degradado"):
+            # Información sobre el problema
+            with st.expander("ℹ️ Sistema ML Local"):
                 st.markdown("""
-                **El sistema ML no está disponible.**
+                **El sistema ML local está inicializándose.**
 
-                **Opciones:**
-                1. Verificar que el modelo existe en `../ml-project-models/saved_models/`
-                2. Instalar dependencias: `pip install scikit-learn pandas numpy`
-                3. Reiniciar la aplicación
+                **Para solucionar cualquier problema:**
+                1. Verificar que el modelo existe en `saved_models/explicit_lyrics_classifier.pkl`
+                2. Instalar dependencias: `pip install scikit-learn pandas numpy nltk`
+                3. Reentrenar el modelo: `python retrain_local_model.py`
+                4. Reiniciar la aplicación
 
-                **O usar API externa:**
-                ```bash
-                cd ../ml-project-models/
-                python api.py
-                ```
+                **Todo funciona localmente, sin necesidad de APIs externas.**
                 """)
 
 def require_ml_system():
@@ -151,7 +148,7 @@ def show_ml_info():
             st.info("🌐 **Usando API Externa** - Conectado a servidor ML independiente")
 
     except:
-        st.warning("⚠️ **Sistema ML en modo degradado** - Funcionalidad limitada")
+        st.warning("⚠️ **Sistema ML local no disponible** - Funcionalidad limitada")
 
 def get_system_info() -> Dict[str, Any]:
     """Obtener información del sistema para debugging"""
@@ -176,3 +173,7 @@ def get_system_info() -> Dict[str, Any]:
             "available": False,
             "error": str(e)
         }
+
+def show_ml_status():
+    """Mostrar estado del modelo ML - función wrapper"""
+    show_ml_status_widget()

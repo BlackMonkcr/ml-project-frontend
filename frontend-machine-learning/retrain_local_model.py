@@ -51,7 +51,10 @@ def prepare_data(df):
     print(f"Datos después de limpieza: {len(df)} canciones")
 
     X = df['text_clean'].values
-    y = df['Explicit'].values
+    # Convertir "Yes"/"No" a True/False
+    y = (df['Explicit'].str.lower() == 'yes').values
+
+    print(f"Distribución de clases: Explícitas: {y.sum()}, Limpias: {(~y).sum()}")
 
     return X, y, preprocessor
 

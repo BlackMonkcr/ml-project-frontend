@@ -9,8 +9,6 @@ from pathlib import Path
 
 # Imports para manejo de datos y ML integrado
 from utils.data_manager import DataManager
-from utils.ml_status import show_ml_status_widget, require_ml_system, show_ml_info
-from utils.ml_client import get_client
 
 # Configuración de la página
 st.set_page_config(
@@ -101,19 +99,50 @@ st.markdown("""
 def main():
     """Función principal de la aplicación"""
 
-    # Mostrar estado del sistema ML en la sidebar
-    show_ml_status_widget()
-
     # Header principal
     st.markdown('<h1 class="main-header">🎵 Explicit Lyrics Analyzer</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Análisis inteligente de contenido explícito en letras de canciones</p>', unsafe_allow_html=True)
 
-    # Mostrar info del sistema ML
-    show_ml_info()
+    # Sidebar para navegación
+    st.sidebar.title("🔧 Navegación")
+    page = st.sidebar.radio(
+        "Selecciona una función:",
+        ["🏠 Inicio", "🔍 Buscar Canciones", "📝 Analizar Letras", "💡 Sugerencias"]
+    )
 
-    # Verificar disponibilidad del dataset
+    # Estado del sistema ML (consolidado)
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 Estado del Dataset")
+    st.sidebar.markdown("### 🤖 Estado del Sistema")
+
+    try:
+        from utils.ml_client import get_client
+        client = get_client()
+        status = client.check_health()
+
+        if hasattr(client, 'ml_available') and client.ml_available:
+            if status["status"] == "healthy":
+                st.sidebar.success("✅ Modelo ML: Cargado")
+                st.sidebar.caption("🔧 Sistema local funcionando")
+            else:
+                st.sidebar.warning("⚠️ Modelo ML: No cargado")
+                if st.sidebar.button("🔄 Cargar Modelo"):
+                    with st.spinner("Cargando modelo..."):
+                        reload_result = client.reload_model()
+                        if reload_result.get("success"):
+                            st.sidebar.success("Modelo cargado!")
+                            st.rerun()
+                        else:
+                            st.sidebar.error("Error cargando modelo")
+        else:
+            st.sidebar.error("❌ Sistema ML no disponible")
+
+    except Exception as e:
+        st.sidebar.error("❌ Error en sistema ML")
+        st.sidebar.caption(f"Detalle: {str(e)[:30]}...")
+
+    # Estado del dataset (consolidado)
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📊 Dataset")
 
     try:
         data_manager = DataManager()
@@ -122,52 +151,21 @@ def main():
         if not df.empty:
             from utils.cache_helpers import get_dataset_stats
             stats = get_dataset_stats(df)
-            st.sidebar.success(f"✅ Dataset: {stats['total_songs']} canciones")
-            st.sidebar.info(f"🎤 {stats['artists']} artistas")
+            st.sidebar.info(f"📈 {stats['total_songs']:,} canciones")
+            st.sidebar.info(f"🔥 {stats['explicit_count']:,} explícitas ({stats['explicit_percentage']:.1f}%)")
+            st.sidebar.info(f"✅ {stats['total_songs'] - stats['explicit_count']:,} limpias")
         else:
             st.sidebar.warning("⚠️ Dataset no disponible")
+            df = None
 
-    except Exception:
-        st.sidebar.error("❌ Error cargando dataset")
-
-    # Sidebar para navegación
-    st.sidebar.markdown("---")
-    st.sidebar.title("🔧 Navegación")
-
-    page = st.sidebar.radio(
-        "Selecciona una función:",
-        ["🏠 Inicio", "🔍 Buscar Canciones", "📝 Analizar Letras", "💡 Sugerencias"]
-    )
-
-    # Información del modelo ML local
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🧠 Estado del Modelo ML")
-
-    # Importar utilidades
-    try:
-        from utils.ml_status import show_ml_status
-        show_ml_status()
     except Exception as e:
-        st.sidebar.error(f"❌ Error verificando modelo: {str(e)}")
-
-    # Información del dataset
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📊 Dataset")
-    try:
-        from utils.data_manager import load_dataset_info
-        dataset_info = load_dataset_info()
-        if dataset_info['total_songs'] > 0:
-            st.sidebar.info(f"📈 {dataset_info['total_songs']:,} canciones")
-            st.sidebar.info(f"🔥 {dataset_info['explicit_percentage']:.1f}% explícitas")
-        else:
-            st.sidebar.error("❌ Dataset no cargado")
-            st.sidebar.caption("Verifica que el CSV esté en data/")
-    except Exception:
-        st.sidebar.info("📊 Cargando información...")
+        st.sidebar.error("❌ Error cargando dataset")
+        st.sidebar.caption(f"Detalle: {str(e)[:30]}...")
+        df = None
 
     # Navegación a páginas
     if page == "🏠 Inicio":
-        show_home_page()
+        show_home_page(df)
     elif page == "🔍 Buscar Canciones":
         try:
             from pages.search_songs import show_search_page
@@ -181,7 +179,7 @@ def main():
             show_analyze_page()
         except Exception as e:
             st.error(f"Error cargando página de análisis: {e}")
-            st.info("Verifica que la API esté funcionando correctamente.")
+            st.info("Verifica que la página esté funcionando correctamente.")
     elif page == "💡 Sugerencias":
         try:
             from pages.suggestions import show_suggestions_page
@@ -190,10 +188,10 @@ def main():
             st.error(f"Error cargando página de sugerencias: {e}")
             st.info("Esta página está en desarrollo.")
 
-def show_home_page():
+def show_home_page(df: pd.DataFrame = None):
     """Página de inicio"""
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    _, col2, _ = st.columns([1, 2, 1])
 
     with col2:
         st.markdown("### 🎯 ¿Qué puedes hacer aquí?")
@@ -220,22 +218,30 @@ def show_home_page():
         st.markdown("### 📈 Estadísticas del Dataset")
 
         try:
-            from utils.data_manager import get_quick_stats
-            stats = get_quick_stats()
+            # Usar el data_manager ya cargado
+            if not df.empty:
+                from utils.cache_helpers import get_dataset_stats
+                stats = get_dataset_stats(df)
 
-            col_a, col_b, col_c = st.columns(3)
+                col_a, col_b, col_c = st.columns(3)
 
-            with col_a:
-                st.metric("Total Canciones", f"{stats['total']:,}")
+                with col_a:
+                    st.metric("📊 Total Canciones", f"{stats['total_songs']:,}")
 
-            with col_b:
-                st.metric("Canciones Explícitas", f"{stats['explicit']:,}")
+                with col_b:
+                    st.metric("🔥 Explícitas", f"{stats['explicit_count']:,}")
 
-            with col_c:
-                st.metric("% Explícitas", f"{stats['explicit_percentage']:.1f}%")
+                with col_c:
+                    st.metric("✅ Limpias", f"{stats['total_songs'] - stats['explicit_count']:,}")
+
+                # Mostrar porcentaje
+                st.metric("📈 Porcentaje Explícitas", f"{stats['explicit_percentage']:.1f}%")
+            else:
+                st.info("Dataset no disponible")
 
         except Exception as e:
             st.info("Cargando estadísticas del dataset...")
+            st.caption(f"Debug: {str(e)}")
 
         st.markdown("---")
         st.markdown("### 🚀 ¡Comienza explorando!")

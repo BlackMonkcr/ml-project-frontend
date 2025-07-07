@@ -33,16 +33,29 @@ def safe_cache_load_dataset(dataset_path: str, columns_to_load: list) -> tuple[p
         })
 
         # Convertir explicit a booleano
-        df['is_explicit'] = df['explicit'].str.lower() == 'yes'
+        if 'explicit' in df.columns:
+            df['is_explicit'] = df['explicit'].str.lower().str.strip() == 'yes'
+
+            # Debug: verificar la conversión
+            explicit_orig_counts = df['explicit'].value_counts().to_dict()
+            explicit_bool_counts = df['is_explicit'].value_counts().to_dict()
+
+            print(f"Debug - Valores únicos en 'explicit': {explicit_orig_counts}")
+            print(f"Debug - Valores únicos en 'is_explicit': {explicit_bool_counts}")
+            print(f"Debug - Total canciones: {len(df)}")
+            print(f"Debug - Explícitas: {df['is_explicit'].sum()}")
+        else:
+            print("Warning: Columna 'explicit' no encontrada después del renombrado")
+            df['is_explicit'] = False
 
         return df, f"Dataset cargado exitosamente: {len(df)} canciones", True
 
     except Exception as e:
         return pd.DataFrame(), f"Error cargando dataset: {str(e)}", False
 
-@st.cache_data
+@st.cache_data(ttl=60)  # Cache por 60 segundos para forzar recarga
 def cached_load_dataset(dataset_path: str) -> tuple[pd.DataFrame, str, bool]:
-    """Versión cacheada de la función de carga"""
+    """Versión cacheada de la función de carga - v3 con TTL para forzar recarga"""
     columns_to_load = [
         'Artist(s)', 'song', 'text', 'Genre', 'Explicit',
         'Similar Artist 1', 'Similar Song 1', 'Similarity Score 1',
@@ -60,7 +73,7 @@ def display_dataset_status(df: pd.DataFrame, message: str, success: bool):
     else:
         st.warning("⚠️ Dataset vacío después de la carga")
 
-@st.cache_data
+@st.cache_data(ttl=60)  # Cache por 60 segundos
 def get_dataset_stats(df: pd.DataFrame) -> Dict[str, Any]:
     """Obtener estadísticas del dataset de forma segura para cache"""
     if df.empty:

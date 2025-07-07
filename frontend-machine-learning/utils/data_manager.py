@@ -15,13 +15,13 @@ from .cache_helpers import cached_load_dataset, display_dataset_status, get_data
 # Ruta al dataset
 DATASET_PATH = "data/spotify_dataset_sin_duplicados_4.csv"
 
-# Mapeo de columnas del nuevo dataset
+# Mapeo de columnas del nuevo dataset (después del renombrado en cache_helpers)
 COLUMN_MAPPING = {
-    'title': 'song',
-    'artist': 'Artist(s)',
-    'lyrics': 'text',
-    'explicit': 'Explicit',
-    'genre': 'Genre',
+    'title': 'title',           # Ya renombrado de 'song'
+    'artist': 'artist',         # Ya renombrado de 'Artist(s)'
+    'lyrics': 'lyrics',         # Ya renombrado de 'text'
+    'explicit': 'explicit',     # Ya renombrado de 'Explicit'
+    'genre': 'genre',           # Ya renombrado de 'Genre'
     'album': 'Album',
     'release_date': 'Release Date',
     'popularity': 'Popularity',
@@ -161,7 +161,7 @@ class DataManager:
         """
         # Buscar la canción original
         original_song = self.get_song_by_title_artist(title, artist)
-        
+
         if not original_song:
             return []
 
@@ -183,13 +183,13 @@ class DataManager:
                 ) & (
                     df[COLUMN_MAPPING['artist']].str.lower() == artist.lower()
                 )
-                
+
                 matches = df[mask]
-                
+
                 for _, row in matches.iterrows():
                     similar_artist = row.get(artist_col, '')
                     similar_song = row.get(song_col, '')
-                    
+
                     if similar_artist and similar_song:
                         # Buscar la canción similar en el dataset
                         similar_match = self.get_song_by_title_artist(similar_song, similar_artist)
@@ -202,7 +202,7 @@ class DataManager:
             if genre and genre != 'Desconocido':
                 genre_songs = self.search_songs_by_genre(genre, page=1, per_page=5)[0]
                 for song in genre_songs:
-                    if (song['title'].lower() != title.lower() or 
+                    if (song['title'].lower() != title.lower() or
                         song['artist'].lower() != artist.lower()):
                         suggestions.append(song)
                         if len(suggestions) >= 5:
@@ -231,7 +231,7 @@ class DataManager:
         mask = df[COLUMN_MAPPING['genre']].str.contains(
             genre_query, case=False, na=False
         )
-        
+
         df_filtered = df[mask]
         total_results = len(df_filtered)
 
@@ -262,14 +262,14 @@ class DataManager:
             'artist': row.get(COLUMN_MAPPING['artist'], ''),
             'genre': row.get(COLUMN_MAPPING['genre'], 'Desconocido'),
             'lyrics': row.get(COLUMN_MAPPING['lyrics'], ''),
-            'is_explicit': bool(row.get(COLUMN_MAPPING['explicit'], False)),
-            'explicit_label': 'Explícito' if row.get(COLUMN_MAPPING['explicit'], False) else 'Limpio',
-            'album': row.get(COLUMN_MAPPING['album'], ''),
-            'release_date': row.get(COLUMN_MAPPING['release_date'], ''),
-            'popularity': row.get(COLUMN_MAPPING['popularity'], 0),
-            'energy': row.get(COLUMN_MAPPING['energy'], 0),
-            'danceability': row.get(COLUMN_MAPPING['danceability'], 0),
-            'tempo': row.get(COLUMN_MAPPING['tempo'], 0)
+            'is_explicit': bool(row.get('is_explicit', False)),  # Usar el campo creado en cache_helpers
+            'explicit_label': 'Explícito' if row.get('is_explicit', False) else 'Limpio',
+            'album': row.get(COLUMN_MAPPING.get('album', 'album'), ''),
+            'release_date': row.get(COLUMN_MAPPING.get('release_date', 'release_date'), ''),
+            'popularity': row.get(COLUMN_MAPPING.get('popularity', 'popularity'), 0),
+            'energy': row.get(COLUMN_MAPPING.get('energy', 'energy'), 0),
+            'danceability': row.get(COLUMN_MAPPING.get('danceability', 'danceability'), 0),
+            'tempo': row.get(COLUMN_MAPPING.get('tempo', 'tempo'), 0)
         }
 
     def get_stats(self) -> Dict[str, Any]:
@@ -280,15 +280,15 @@ class DataManager:
             Diccionario con estadísticas
         """
         df = self.get_dataset()
-        
+
         if df.empty:
             return {}
 
         stats = get_dataset_stats(df)
-        
+
         # Agregar estadísticas específicas del nuevo dataset
-        if COLUMN_MAPPING['explicit'] in df.columns:
-            explicit_count = df[COLUMN_MAPPING['explicit']].sum()
+        if 'is_explicit' in df.columns:
+            explicit_count = df['is_explicit'].sum()
             stats['explicit_songs'] = int(explicit_count)
             stats['clean_songs'] = len(df) - int(explicit_count)
             stats['explicit_percentage'] = (explicit_count / len(df)) * 100

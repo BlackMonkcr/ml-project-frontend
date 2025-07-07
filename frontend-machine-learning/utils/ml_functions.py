@@ -51,21 +51,33 @@ def load_ml_model() -> tuple[Any, bool, str]:
 
         # Asegurar que los módulos estén disponibles para pickle
         import sys
-        import importlib.util
 
-        # Importar los módulos necesarios y agregarlos al namespace global
-        from . import pipeline, text_preprocessing
+        # Agregar el directorio actual al path si no está
+        current_dir = str(Path(__file__).parent.parent)
+        if current_dir not in sys.path:
+            sys.path.insert(0, current_dir)
 
-        # Agregar al namespace de sys.modules para que pickle los encuentre
-        sys.modules['pipeline'] = pipeline
-        sys.modules['text_preprocessing'] = text_preprocessing
+        # Importar los módulos necesarios
+        try:
+            from utils import pipeline, text_preprocessing
 
-        # También agregarlos sin el prefijo utils
-        sys.modules['utils.pipeline'] = pipeline
-        sys.modules['utils.text_preprocessing'] = text_preprocessing
+            # Agregar al namespace de sys.modules para que pickle los encuentre
+            sys.modules['pipeline'] = pipeline
+            sys.modules['text_preprocessing'] = text_preprocessing
+            sys.modules['utils.pipeline'] = pipeline
+            sys.modules['utils.text_preprocessing'] = text_preprocessing
 
+        except ImportError as import_error:
+            logger.error(f"Error importando módulos: {import_error}")
+            return None, False, f"Error importando módulos necesarios: {import_error}"
+
+        # Cargar el modelo
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
+
+        # Verificar que el modelo tenga los métodos necesarios
+        if not hasattr(model, 'predict'):
+            return None, False, "El modelo cargado no tiene método predict"
 
         logger.info(f"Modelo cargado exitosamente desde {model_path}")
         return model, True, f"Modelo cargado desde {model_path}"
@@ -327,7 +339,20 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
 
 def get_model_status() -> Dict[str, Any]:
     """Obtener estado del modelo"""
-    global _model_loaded
+    global _model_loaded, _model_pipeline
+
+    # Intentar cargar el modelo si no está cargado para verificar el estado real
+    if not _model_loaded or _model_pipeline is None:
+        try:
+            # No usar st.error/success aquí para evitar warnings en testing
+            model, success, message = load_ml_model()
+            if success:
+                _model_pipeline = model
+                _model_loaded = True
+            else:
+                _model_loaded = False
+        except Exception:
+            _model_loaded = False
 
     return {
         "model_loaded": _model_loaded,

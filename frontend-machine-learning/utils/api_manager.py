@@ -109,7 +109,7 @@ def show_api_status_widget():
             data = status.get("data", {})
             st.info(f"🕐 {data.get('timestamp', 'N/A')}")
 
-            if st.button("🔄 Recargar Estado"):
+            if st.button("🔄 Recargar Estado", key="api_reload_status"):
                 st.rerun()
 
         elif status["status"] == "offline":
@@ -119,7 +119,7 @@ def show_api_status_widget():
             col1, col2 = st.columns(2)
 
             with col1:
-                if st.button("🚀 Iniciar API"):
+                if st.button("🚀 Iniciar API", key="api_start_button"):
                     with st.spinner("Iniciando API..."):
                         if api_manager.start_api_local():
                             st.success("API iniciada!")
@@ -129,7 +129,7 @@ def show_api_status_widget():
                             st.error("No se pudo iniciar la API automáticamente")
 
             with col2:
-                if st.button("🔄 Verificar"):
+                if st.button("🔄 Verificar", key="api_verify_button"):
                     st.rerun()
 
             # Instrucciones manuales
@@ -168,7 +168,7 @@ def show_api_status_widget():
             st.warning("⚠️ API con problemas")
             st.error(status["message"])
 
-            if st.button("🔄 Reintentar"):
+            if st.button("🔄 Reintentar", key="api_retry_button"):
                 st.rerun()
 
 def require_api_connection():
@@ -193,7 +193,7 @@ def require_api_connection():
         """)
 
         # Botón de recarga rápida
-        if st.button("🔄 Verificar API ahora"):
+        if st.button("🔄 Verificar API ahora", key="api_verify_now"):
             st.rerun()
 
         return False
