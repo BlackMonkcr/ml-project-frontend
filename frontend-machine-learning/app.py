@@ -7,6 +7,14 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 
+# Configurar NLTK antes de cualquier otra importación
+try:
+    from utils.nltk_setup import setup_nltk_data, ensure_nltk_ready
+    # Configurar NLTK al inicio de la aplicación
+    setup_nltk_data()
+except Exception as e:
+    st.warning(f"Advertencia al configurar NLTK: {e}")
+
 # Imports para manejo de datos y ML integrado
 from utils.data_manager import DataManager
 

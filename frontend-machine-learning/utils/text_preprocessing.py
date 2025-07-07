@@ -14,16 +14,27 @@ from nltk.tokenize import word_tokenize
 import warnings
 warnings.filterwarnings('ignore')
 
-# Ensure NLTK data is downloaded
+# Configurar NLTK usando el módulo centralizado
 try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+    from .nltk_setup import setup_nltk_data, ensure_nltk_ready
+    setup_nltk_data()
+except Exception as e:
+    print(f"Warning: Error setting up NLTK: {e}")
+    # Fallback manual setup
+    nltk_packages = [
+        ('tokenizers/punkt', 'punkt'),
+        ('tokenizers/punkt_tab', 'punkt_tab'),
+        ('corpora/stopwords', 'stopwords'),
+    ]
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords', quiet=True)
+    for data_path, package_name in nltk_packages:
+        try:
+            nltk.data.find(data_path)
+        except LookupError:
+            try:
+                nltk.download(package_name, quiet=True)
+            except Exception as download_error:
+                print(f"Warning: Could not download {package_name}: {download_error}")
 
 class TextPreprocessor:
     """
