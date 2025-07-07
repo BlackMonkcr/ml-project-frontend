@@ -1,36 +1,19 @@
+# Streamlit Cloud Requirements (Python 3.9)
+# Optimizado para evitar problemas de compilación
+
+# Core web framework
 streamlit>=1.28.0
 
-# Core data processing (pinned versions for compatibility)
-pandas==2.3.0  # Compatible with numpy 1.26.4
-numpy==1.26.4  # Compatible with gensim 4.3.3 and pandas 2.3.0
-scikit-learn==1.6.1  # Updated for compatibility
-joblib==1.5.1  # Updated for compatibility
+# Essential data processing
+pandas>=2.0.0,<2.4.0
+numpy>=1.24.0,<1.27.0
 
-# Scientific computing (pinned for compatibility)
-scipy==1.13.1  # Compatible with gensim 4.3.3
+# Machine Learning (compatible versions for Python 3.9)
+scikit-learn>=1.3.0,<1.6.0
+joblib>=1.3.0
 
-# Visualization
-matplotlib==3.9.4  # Updated for compatibility
-seaborn==0.13.2  # Updated for compatibility
+# Text processing
+nltk>=3.8.0
 
-# NLP and text processing
-nltk==3.9.1  # Updated for compatibility
-gensim==4.3.3  # Updated for scipy 1.13.1 compatibility
-
-# Utilities
-tqdm==4.67.1  # Updated for compatibility
-
-# FastAPI and web server
-fastapi==0.115.14  # Updated for compatibility
-uvicorn[standard]==0.35.0  # Updated for compatibility
-pydantic==2.11.7  # Updated for compatibility
-
-# Spotify API integration
-spotipy==2.25.1  # Updated for compatibility
-
-# HTTP requests and environment
-requests==2.32.4  # Updated for compatibility
-python-dotenv==1.1.1  # Updated for compatibility
-
-# Additional dependencies for CORS support
-python-multipart==0.0.20  # Updated for compatibility
+# HTTP requests
+requests>=2.28.0
