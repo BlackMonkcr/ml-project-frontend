@@ -133,8 +133,9 @@ def predict_lyrics(lyrics: str, song_title: Optional[str] = None,
         prediction = _model_pipeline.predict([lyrics])
         probabilities = _model_pipeline.predict_proba([lyrics])
 
-        # Procesar resultados
-        is_explicit = bool(prediction[0])
+        # Procesar resultados - el modelo devuelve 'Yes'/'No', no 0/1
+        prediction_str = str(prediction[0]).strip().lower()
+        is_explicit = prediction_str == 'yes'
         confidence = float(max(probabilities[0]))
 
         # Crear respuesta
@@ -202,7 +203,9 @@ def predict_batch(lyrics_list: List[str]) -> Dict[str, Any]:
             prediction = _model_pipeline.predict([lyrics])
             probabilities = _model_pipeline.predict_proba([lyrics])
 
-            is_explicit = bool(prediction[0])
+            # Procesar resultados - el modelo devuelve 'Yes'/'No', no 0/1
+            prediction_str = str(prediction[0]).strip().lower()
+            is_explicit = prediction_str == 'yes'
             confidence = float(max(probabilities[0]))
 
             predictions.append({
@@ -247,7 +250,9 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
         prediction = _model_pipeline.predict([lyrics])
         probabilities = _model_pipeline.predict_proba([lyrics])
 
-        is_explicit = bool(prediction[0])
+        # Procesar resultados - el modelo devuelve 'Yes'/'No', no 0/1
+        prediction_str = str(prediction[0]).strip().lower()
+        is_explicit = prediction_str == 'yes'
         confidence = float(max(probabilities[0]))
 
         # Analizar palabras individuales
