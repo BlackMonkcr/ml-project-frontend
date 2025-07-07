@@ -29,7 +29,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/blackmonk/utec/ML-project-frontend/Frontend Machine Learning/venv_frontend"
+set -gx VIRTUAL_ENV "/Users/blackmonk/utec/ML-project-frontend/frontend-machine-learning/venv_frontend"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

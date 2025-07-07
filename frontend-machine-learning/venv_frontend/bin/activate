@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/blackmonk/utec/ML-project-frontend/Frontend Machine Learning/venv_frontend"
+VIRTUAL_ENV="/Users/blackmonk/utec/ML-project-frontend/frontend-machine-learning/venv_frontend"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
