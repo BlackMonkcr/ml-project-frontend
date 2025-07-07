@@ -139,21 +139,16 @@ def main():
         ["🏠 Inicio", "🔍 Buscar Canciones", "📝 Analizar Letras", "💡 Sugerencias"]
     )
 
-    # Información de la API
+    # Información del modelo ML local
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📡 Estado de la API")
+    st.sidebar.markdown("### 🧠 Estado del Modelo ML")
 
     # Importar utilidades
     try:
-        from utils.api_client import check_api_status
-        api_status = check_api_status()
-        if api_status:
-            st.sidebar.success("✅ API conectada")
-        else:
-            st.sidebar.error("❌ API desconectada")
-            st.sidebar.caption("Inicia la API con: python api.py")
-    except Exception:
-        st.sidebar.warning("⚠️ Verificando API...")
+        from utils.ml_status import show_ml_status
+        show_ml_status()
+    except Exception as e:
+        st.sidebar.error(f"❌ Error verificando modelo: {str(e)}")
 
     # Información del dataset
     st.sidebar.markdown("---")

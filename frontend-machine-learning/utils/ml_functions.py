@@ -8,9 +8,20 @@ import logging
 import streamlit as st
 from typing import Dict, Any, Optional, List
 import os
+import sys
 from datetime import datetime
 import numpy as np
 from pathlib import Path
+
+# Agregar el directorio utils al path para importar módulos locales
+current_dir = Path(__file__).parent
+if str(current_dir) not in sys.path:
+    sys.path.append(str(current_dir))
+
+# Importar módulos locales
+from .config import MODEL_PATH, EXPLICIT_KEYWORDS, ERROR_MESSAGES, get_model_info
+from .pipeline import ModelPipeline
+from .text_preprocessing import TextPreprocessor
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -20,25 +31,9 @@ logger = logging.getLogger(__name__)
 _model_pipeline = None
 _model_loaded = False
 
-# Paths relativos al proyecto
-ML_MODELS_PATH = Path("../ml-project-models")
-MODEL_PATH = ML_MODELS_PATH / "saved_models" / "explicit_lyrics_classifier.pkl"
-
 def get_model_path() -> Path:
-    """Obtener la ruta del modelo, buscando en múltiples ubicaciones"""
-    possible_paths = [
-        Path("../ml-project-models/saved_models/explicit_lyrics_classifier.pkl"),
-        Path("../../ml-project-models/saved_models/explicit_lyrics_classifier.pkl"),
-        Path("ml-project-models/saved_models/explicit_lyrics_classifier.pkl"),
-        Path("saved_models/explicit_lyrics_classifier.pkl"),
-        Path("explicit_lyrics_classifier.pkl")
-    ]
-
-    for path in possible_paths:
-        if path.exists():
-            return path
-
-    return possible_paths[0]  # Retornar el primero como default
+    """Obtener la ruta del modelo en la carpeta local"""
+    return MODEL_PATH
 
 @st.cache_resource
 def load_ml_model() -> tuple[Any, bool, str]:
@@ -53,6 +48,21 @@ def load_ml_model() -> tuple[Any, bool, str]:
 
         if not model_path.exists():
             return None, False, f"Modelo no encontrado en {model_path}"
+
+        # Asegurar que los módulos estén disponibles para pickle
+        import sys
+        import importlib.util
+
+        # Importar los módulos necesarios y agregarlos al namespace global
+        from . import pipeline, text_preprocessing
+
+        # Agregar al namespace de sys.modules para que pickle los encuentre
+        sys.modules['pipeline'] = pipeline
+        sys.modules['text_preprocessing'] = text_preprocessing
+
+        # También agregarlos sin el prefijo utils
+        sys.modules['utils.pipeline'] = pipeline
+        sys.modules['utils.text_preprocessing'] = text_preprocessing
 
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
@@ -94,14 +104,14 @@ def predict_lyrics(lyrics: str, song_title: Optional[str] = None,
     """
     if not ensure_model_loaded():
         return {
-            "error": "Modelo no disponible",
+            "error": ERROR_MESSAGES["MODEL_NOT_AVAILABLE"],
             "is_explicit": None,
             "confidence": 0.0
         }
 
     if not lyrics or not lyrics.strip():
         return {
-            "error": "Las letras no pueden estar vacías",
+            "error": ERROR_MESSAGES["EMPTY_LYRICS"],
             "is_explicit": None,
             "confidence": 0.0
         }
@@ -232,12 +242,8 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
         words_analysis = []
         words = lyrics.split()
 
-        # Keywords explícitas comunes
-        explicit_keywords = {
-            'fuck', 'shit', 'bitch', 'damn', 'hell', 'ass', 'bastard',
-            'cock', 'dick', 'pussy', 'whore', 'slut', 'motherfucker',
-            'fucking', 'fucked', 'nigga', 'nigger', 'cunt', 'faggot'
-        }
+        # Usar keywords explícitas de configuración
+        explicit_keywords = EXPLICIT_KEYWORDS
 
         for word in words:
             word_cleaned = word.lower().strip('.,!?";:()[]{}')

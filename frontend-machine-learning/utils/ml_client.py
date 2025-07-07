@@ -144,19 +144,8 @@ def get_smart_client():
             st.info("🔧 Usando sistema ML integrado (sin API externa)")
             return ml_client
 
-    # Fallback a API externa si ML local no está disponible
-    st.warning("⚠️ ML local no disponible, intentando API externa...")
-    try:
-        from .api_client import APIClient
-        api_client = APIClient()
-        health = api_client.check_health()
-        if health["status"] != "error":
-            st.info("🌐 Usando API externa")
-            return api_client
-    except Exception as e:
-        st.error(f"API externa tampoco disponible: {e}")
-
-    # Si nada funciona, retornar ML client para mostrar errores apropiados
+    # Si ML local no está disponible, usar cliente básico
+    st.warning("⚠️ ML local no disponible")
     return ml_client
 
 # Instancia global del cliente inteligente
