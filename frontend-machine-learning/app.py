@@ -100,17 +100,17 @@ st.markdown("""
 
 def main():
     """Función principal de la aplicación"""
-    
+
     # Mostrar estado del sistema ML en la sidebar
     show_ml_status_widget()
-    
+
     # Header principal
     st.markdown('<h1 class="main-header">🎵 Explicit Lyrics Analyzer</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Análisis inteligente de contenido explícito en letras de canciones</p>', unsafe_allow_html=True)
-    
+
     # Mostrar info del sistema ML
     show_ml_info()
-    
+
     # Verificar disponibilidad del dataset
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📊 Estado del Dataset")

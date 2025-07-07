@@ -33,33 +33,33 @@ def get_model_path() -> Path:
         Path("saved_models/explicit_lyrics_classifier.pkl"),
         Path("explicit_lyrics_classifier.pkl")
     ]
-    
+
     for path in possible_paths:
         if path.exists():
             return path
-    
+
     return possible_paths[0]  # Retornar el primero como default
 
 @st.cache_resource
 def load_ml_model() -> tuple[Any, bool, str]:
     """
     Cargar el modelo de ML de forma segura con cache
-    
+
     Returns:
         Tupla con (modelo, success, mensaje)
     """
     try:
         model_path = get_model_path()
-        
+
         if not model_path.exists():
             return None, False, f"Modelo no encontrado en {model_path}"
-        
+
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
-        
+
         logger.info(f"Modelo cargado exitosamente desde {model_path}")
         return model, True, f"Modelo cargado desde {model_path}"
-        
+
     except Exception as e:
         error_msg = f"Error cargando modelo: {str(e)}"
         logger.error(error_msg)
@@ -68,7 +68,7 @@ def load_ml_model() -> tuple[Any, bool, str]:
 def ensure_model_loaded() -> bool:
     """Asegurar que el modelo esté cargado"""
     global _model_pipeline, _model_loaded
-    
+
     if not _model_loaded:
         _model_pipeline, _model_loaded, message = load_ml_model()
         if not _model_loaded:
@@ -76,19 +76,19 @@ def ensure_model_loaded() -> bool:
             return False
         else:
             st.success(f"✅ {message}")
-    
+
     return _model_loaded
 
-def predict_lyrics(lyrics: str, song_title: Optional[str] = None, 
+def predict_lyrics(lyrics: str, song_title: Optional[str] = None,
                   artist: Optional[str] = None) -> Dict[str, Any]:
     """
     Predecir si unas letras son explícitas
-    
+
     Args:
         lyrics: Letras de la canción
         song_title: Título opcional
         artist: Artista opcional
-        
+
     Returns:
         Diccionario con la predicción
     """
@@ -98,23 +98,23 @@ def predict_lyrics(lyrics: str, song_title: Optional[str] = None,
             "is_explicit": None,
             "confidence": 0.0
         }
-    
+
     if not lyrics or not lyrics.strip():
         return {
             "error": "Las letras no pueden estar vacías",
             "is_explicit": None,
             "confidence": 0.0
         }
-    
+
     try:
         # Realizar predicción
         prediction = _model_pipeline.predict([lyrics])
         probabilities = _model_pipeline.predict_proba([lyrics])
-        
+
         # Procesar resultados
         is_explicit = bool(prediction[0])
         confidence = float(max(probabilities[0]))
-        
+
         # Crear respuesta
         result = {
             "is_explicit": is_explicit,
@@ -132,10 +132,10 @@ def predict_lyrics(lyrics: str, song_title: Optional[str] = None,
                 "artist": artist
             }
         }
-        
+
         logger.info(f"Predicción: {result['prediction_class']} (confianza: {confidence:.3f})")
         return result
-        
+
     except Exception as e:
         error_msg = f"Error en predicción: {str(e)}"
         logger.error(error_msg)
@@ -148,25 +148,25 @@ def predict_lyrics(lyrics: str, song_title: Optional[str] = None,
 def predict_batch(lyrics_list: List[str]) -> Dict[str, Any]:
     """
     Predecir múltiples letras en lote
-    
+
     Args:
         lyrics_list: Lista de letras
-        
+
     Returns:
         Diccionario con las predicciones
     """
     if not ensure_model_loaded():
         return {"error": "Modelo no disponible", "predictions": []}
-    
+
     if not lyrics_list or len(lyrics_list) == 0:
         return {"error": "Lista de letras vacía", "predictions": []}
-    
+
     if len(lyrics_list) > 100:
         return {"error": "Máximo 100 letras por lote", "predictions": []}
-    
+
     try:
         predictions = []
-        
+
         for i, lyrics in enumerate(lyrics_list):
             if not lyrics or not lyrics.strip():
                 predictions.append({
@@ -176,13 +176,13 @@ def predict_batch(lyrics_list: List[str]) -> Dict[str, Any]:
                     "confidence": None
                 })
                 continue
-            
+
             prediction = _model_pipeline.predict([lyrics])
             probabilities = _model_pipeline.predict_proba([lyrics])
-            
+
             is_explicit = bool(prediction[0])
             confidence = float(max(probabilities[0]))
-            
+
             predictions.append({
                 "index": i,
                 "is_explicit": is_explicit,
@@ -193,9 +193,9 @@ def predict_batch(lyrics_list: List[str]) -> Dict[str, Any]:
                     "explicit": float(probabilities[0][1])
                 }
             })
-        
+
         return {"predictions": predictions}
-        
+
     except Exception as e:
         error_msg = f"Error en predicción batch: {str(e)}"
         logger.error(error_msg)
@@ -205,46 +205,46 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
                  artist: Optional[str] = None) -> Dict[str, Any]:
     """
     Analizar palabras específicas para identificar contribución a explicitud
-    
+
     Args:
         lyrics: Letras de la canción
         song_title: Título opcional
         artist: Artista opcional
-        
+
     Returns:
         Análisis detallado por palabra
     """
     if not ensure_model_loaded():
         return {"error": "Modelo no disponible"}
-    
+
     if not lyrics or not lyrics.strip():
         return {"error": "Las letras no pueden estar vacías"}
-    
+
     try:
         # Predicción general
         prediction = _model_pipeline.predict([lyrics])
         probabilities = _model_pipeline.predict_proba([lyrics])
-        
+
         is_explicit = bool(prediction[0])
         confidence = float(max(probabilities[0]))
-        
+
         # Analizar palabras individuales
         words_analysis = []
         words = lyrics.split()
-        
+
         # Keywords explícitas comunes
         explicit_keywords = {
-            'fuck', 'shit', 'bitch', 'damn', 'hell', 'ass', 'bastard', 
+            'fuck', 'shit', 'bitch', 'damn', 'hell', 'ass', 'bastard',
             'cock', 'dick', 'pussy', 'whore', 'slut', 'motherfucker',
             'fucking', 'fucked', 'nigga', 'nigger', 'cunt', 'faggot'
         }
-        
+
         for word in words:
             word_cleaned = word.lower().strip('.,!?";:()[]{}')
             if len(word_cleaned) > 2:
                 try:
                     is_explicit_keyword = word_cleaned in explicit_keywords
-                    
+
                     # Intentar predicción individual
                     try:
                         word_prediction = _model_pipeline.predict([word_cleaned])
@@ -256,20 +256,20 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
                             explicit_score = 0.9 + np.random.uniform(-0.1, 0.1)
                         else:
                             explicit_score = 0.1 + np.random.uniform(0, 0.3)
-                    
+
                     # Ajustar si es keyword conocida
                     if is_explicit_keyword and explicit_score < 0.7:
                         explicit_score = 0.8 + np.random.uniform(0, 0.15)
-                    
+
                     is_word_explicit = explicit_score > 0.6 or is_explicit_keyword
-                    
+
                     if explicit_score > 0.8:
                         contribution = "high"
                     elif explicit_score > 0.6:
                         contribution = "medium"
                     else:
                         contribution = "low"
-                    
+
                     words_analysis.append({
                         "word": word,
                         "word_cleaned": word_cleaned,
@@ -277,7 +277,7 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
                         "is_explicit": is_word_explicit,
                         "contribution": contribution
                     })
-                    
+
                 except Exception as word_error:
                     logger.warning(f"Error analizando palabra '{word}': {word_error}")
                     words_analysis.append({
@@ -287,7 +287,7 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
                         "is_explicit": False,
                         "contribution": "low"
                     })
-        
+
         # Resultado final
         result = {
             "words": words_analysis,
@@ -310,10 +310,10 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
                 "artist": artist
             }
         }
-        
+
         logger.info(f"Análisis de palabras: {len(words_analysis)} palabras analizadas")
         return result
-        
+
     except Exception as e:
         error_msg = f"Error en análisis de palabras: {str(e)}"
         logger.error(error_msg)
@@ -322,7 +322,7 @@ def analyze_words(lyrics: str, song_title: Optional[str] = None,
 def get_model_status() -> Dict[str, Any]:
     """Obtener estado del modelo"""
     global _model_loaded
-    
+
     return {
         "model_loaded": _model_loaded,
         "model_path": str(get_model_path()),
@@ -333,15 +333,15 @@ def get_model_status() -> Dict[str, Any]:
 def reload_model() -> Dict[str, Any]:
     """Recargar el modelo manualmente"""
     global _model_pipeline, _model_loaded
-    
+
     # Limpiar cache
     load_ml_model.clear()
     _model_loaded = False
     _model_pipeline = None
-    
+
     # Recargar
     success = ensure_model_loaded()
-    
+
     return {
         "success": success,
         "message": "Modelo recargado exitosamente" if success else "Error recargando modelo",

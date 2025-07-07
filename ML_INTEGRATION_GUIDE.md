@@ -10,7 +10,7 @@ Hemos migrado de un sistema de **API externa FastAPI** a un **sistema ML integra
 ```
 Frontend (Streamlit) → HTTP Calls → FastAPI Server → ML Model
 ```
-- **Problemas:** 
+- **Problemas:**
   - API externa puede fallar
   - Dos servicios que mantener
   - Dependencia de red
@@ -100,7 +100,7 @@ def get_smart_client():
     ml_client = MLClient()
     if ml_client.ml_available:
         return ml_client
-    
+
     # Fallback a API externa
     api_client = APIClient()
     return api_client

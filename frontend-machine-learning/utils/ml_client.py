@@ -23,20 +23,20 @@ except ImportError as e:
 
 class MLClient:
     """Cliente ML integrado que reemplaza las llamadas a API externa"""
-    
+
     def __init__(self):
         self.ml_available = ML_AVAILABLE
-        
+
     def check_health(self) -> Dict[str, Any]:
         """Verificar el estado del sistema ML"""
         if not self.ml_available:
             return {
-                "status": "error", 
+                "status": "error",
                 "message": "Funciones ML no disponibles",
                 "model_loaded": False,
                 "timestamp": datetime.now().isoformat()
             }
-        
+
         try:
             status = get_model_status()
             return {
@@ -52,78 +52,78 @@ class MLClient:
                 "model_loaded": False,
                 "timestamp": datetime.now().isoformat()
             }
-    
-    def predict_lyrics(self, lyrics: str, song_title: Optional[str] = None, 
+
+    def predict_lyrics(self, lyrics: str, song_title: Optional[str] = None,
                       artist: Optional[str] = None) -> Dict[str, Any]:
         """
         Predecir si las letras son explícitas usando ML local
-        
+
         Args:
             lyrics: Letras de la canción
             song_title: Título de la canción (opcional)
             artist: Artista (opcional)
-            
+
         Returns:
             Diccionario con la predicción
         """
         if not self.ml_available:
             return {"error": "Sistema ML no disponible"}
-        
+
         try:
             return ml_predict_lyrics(lyrics, song_title, artist)
         except Exception as e:
             error_msg = f"Error en predicción ML: {str(e)}"
             st.error(error_msg)
             return {"error": error_msg}
-    
+
     def analyze_words(self, lyrics: str, song_title: Optional[str] = None,
                      artist: Optional[str] = None) -> Dict[str, Any]:
         """
         Analizar palabras específicas de las letras usando ML local
-        
+
         Args:
             lyrics: Letras de la canción
             song_title: Título de la canción (opcional)
             artist: Artista (opcional)
-            
+
         Returns:
             Diccionario con el análisis por palabra
         """
         if not self.ml_available:
             return {"error": "Sistema ML no disponible"}
-        
+
         try:
             return ml_analyze_words(lyrics, song_title, artist)
         except Exception as e:
             error_msg = f"Error en análisis de palabras: {str(e)}"
             st.error(error_msg)
             return {"error": error_msg}
-    
+
     def predict_batch(self, lyrics_list: List[str]) -> Dict[str, Any]:
         """
         Predecir múltiples letras en lote usando ML local
-        
+
         Args:
             lyrics_list: Lista de letras
-            
+
         Returns:
             Diccionario con las predicciones
         """
         if not self.ml_available:
             return {"error": "Sistema ML no disponible", "predictions": []}
-        
+
         try:
             return ml_predict_batch(lyrics_list)
         except Exception as e:
             error_msg = f"Error en predicción batch: {str(e)}"
             st.error(error_msg)
             return {"error": error_msg, "predictions": []}
-    
+
     def reload_model(self) -> Dict[str, Any]:
         """Recargar el modelo ML"""
         if not self.ml_available:
             return {"success": False, "message": "Sistema ML no disponible"}
-        
+
         try:
             return reload_model()
         except Exception as e:
@@ -143,7 +143,7 @@ def get_smart_client():
         if health["status"] in ["healthy", "unhealthy"]:  # ML disponible aunque modelo no esté cargado
             st.info("🔧 Usando sistema ML integrado (sin API externa)")
             return ml_client
-    
+
     # Fallback a API externa si ML local no está disponible
     st.warning("⚠️ ML local no disponible, intentando API externa...")
     try:
@@ -155,7 +155,7 @@ def get_smart_client():
             return api_client
     except Exception as e:
         st.error(f"API externa tampoco disponible: {e}")
-    
+
     # Si nada funciona, retornar ML client para mostrar errores apropiados
     return ml_client
 
@@ -183,7 +183,7 @@ def predict_lyrics_safe(lyrics: str, song_title: Optional[str] = None,
                        artist: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """
     Versión segura de predicción que maneja errores
-    
+
     Returns:
         Predicción o None si hay error
     """
@@ -200,7 +200,7 @@ def analyze_words_safe(lyrics: str, song_title: Optional[str] = None,
                       artist: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """
     Versión segura de análisis de palabras que maneja errores
-    
+
     Returns:
         Análisis o None si hay error
     """
@@ -216,15 +216,15 @@ def analyze_words_safe(lyrics: str, song_title: Optional[str] = None,
 def format_confidence(confidence: float) -> tuple[str, str]:
     """
     Formatear la confianza del modelo
-    
+
     Args:
         confidence: Valor de confianza (0-1)
-        
+
     Returns:
         Tupla con (texto_formateado, clase_css)
     """
     percentage = confidence * 100
-    
+
     if confidence >= 0.8:
         return f"{percentage:.1f}%", "confidence-high"
     elif confidence >= 0.6:
@@ -235,10 +235,10 @@ def format_confidence(confidence: float) -> tuple[str, str]:
 def get_confidence_description(confidence: float) -> str:
     """
     Obtener descripción textual de la confianza
-    
+
     Args:
         confidence: Valor de confianza (0-1)
-        
+
     Returns:
         Descripción textual
     """
