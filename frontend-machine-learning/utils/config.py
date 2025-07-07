@@ -3,11 +3,64 @@ Configuración del sistema ML integrado
 """
 
 from pathlib import Path
+import os
 
-# Configuración de paths
-MODEL_DIR = Path("saved_models")
+def get_base_path():
+    """Detectar automáticamente el directorio base de la aplicación"""
+    # Obtener el directorio donde está este archivo (utils/)
+    current_file = Path(__file__).resolve()
+    utils_dir = current_file.parent
+
+    # El directorio base debería ser el padre de utils/
+    base_dir = utils_dir.parent
+
+    # Lista de posibles ubicaciones base, en orden de prioridad
+    possible_bases = [
+        base_dir,  # Directorio normal (frontend-machine-learning/)
+        Path.cwd(),  # Directorio de trabajo actual
+        Path.cwd() / "frontend-machine-learning",  # Si está en la raíz del repo
+        utils_dir.parent.parent / "frontend-machine-learning",  # Navegación desde utils
+        Path("/mount/src/ml-project-frontend/frontend-machine-learning"),  # Streamlit Cloud específico
+    ]
+
+    # También buscar en el directorio padre si contiene frontend-machine-learning
+    cwd = Path.cwd()
+    if "frontend-machine-learning" not in str(cwd):
+        for parent in [cwd.parent, cwd.parent.parent]:
+            frontend_subdir = parent / "frontend-machine-learning"
+            if frontend_subdir.exists():
+                possible_bases.append(frontend_subdir)
+
+    # Verificar cada candidato
+    for candidate in possible_bases:
+        if not candidate.exists():
+            continue
+
+        model_path = candidate / "saved_models"
+        data_path = candidate / "data"
+
+        # Verificar si tiene la estructura esperada
+        if model_path.exists() and data_path.exists():
+            print(f"🔍 Base path detectado (completo): {candidate}")
+            return candidate
+        elif model_path.exists() or data_path.exists():
+            print(f"🔍 Base path detectado (parcial): {candidate}")
+            return candidate
+
+    # Fallback al directorio base calculado
+    print(f"⚠️ Usando fallback path: {base_dir}")
+    print(f"   CWD actual: {Path.cwd()}")
+    print(f"   Archivo actual: {current_file}")
+    return base_dir
+
+# Configuración de paths con detección automática
+BASE_PATH = get_base_path()
+MODEL_DIR = BASE_PATH / "saved_models"
 MODEL_FILE = "explicit_lyrics_classifier.pkl"
 MODEL_PATH = MODEL_DIR / MODEL_FILE
+
+# Path del dataset
+DATA_PATH = BASE_PATH / "data" / "spotify_dataset_sin_duplicados_4.csv"
 
 # Configuración de ML
 CACHE_ENABLED = True

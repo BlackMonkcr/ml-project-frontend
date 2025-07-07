@@ -11,9 +11,37 @@ from pathlib import Path
 
 # Imports para funciones de cache seguras
 from .cache_helpers import cached_load_dataset, display_dataset_status, get_dataset_stats
+from .config import DATA_PATH
 
-# Ruta al dataset
-DATASET_PATH = "data/spotify_dataset_sin_duplicados_4.csv"
+# Constante para el nombre del dataset
+DATASET_FILENAME = "spotify_dataset_sin_duplicados_4.csv"
+
+# Ruta al dataset usando configuración automática
+DATASET_PATH = str(DATA_PATH)
+
+# Verificar si el dataset existe y mostrar información de debug
+if not Path(DATASET_PATH).exists():
+    print(f"❌ Dataset no encontrado en: {DATASET_PATH}")
+    print(f"📁 Directorio actual: {os.getcwd()}")
+    print(f"📁 Directorio del archivo: {Path(__file__).parent}")
+    print(f"📁 Base path configurado: {DATA_PATH.parent}")
+
+    # Buscar el dataset en ubicaciones alternativas
+    alternative_paths = [
+        Path.cwd() / "data" / DATASET_FILENAME,
+        Path.cwd() / "frontend-machine-learning" / "data" / DATASET_FILENAME,
+        Path(__file__).parent.parent / "data" / DATASET_FILENAME,
+    ]
+
+    for alt_path in alternative_paths:
+        if alt_path.exists():
+            print(f"✅ Dataset encontrado en ubicación alternativa: {alt_path}")
+            DATASET_PATH = str(alt_path)
+            break
+    else:
+        print("💀 No se pudo encontrar el dataset en ninguna ubicación")
+else:
+    print(f"✅ Dataset encontrado en: {DATASET_PATH}")
 
 # Mapeo de columnas del nuevo dataset (después del renombrado en cache_helpers)
 COLUMN_MAPPING = {
