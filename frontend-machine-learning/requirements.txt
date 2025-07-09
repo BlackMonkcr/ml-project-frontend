@@ -34,3 +34,5 @@ python-dotenv==1.1.1  # Updated for compatibility
 
 # Additional dependencies for CORS support
 python-multipart==0.0.20  # Updated for compatibility
+# faiss-cpu==1.8.0
+faiss-cpu>=1.7.4,<1.8.0

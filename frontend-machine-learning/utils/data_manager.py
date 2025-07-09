@@ -175,6 +175,29 @@ class DataManager:
         # Retornar la primera coincidencia
         row = matches.iloc[0]
         return self._row_to_dict(row)
+    
+    def get_id(self, title: str, artist: str) -> Optional[Dict]:
+        df = self.get_dataset()
+
+        if df.empty:
+            return None
+
+        # Buscar coincidencias exactas (case insensitive)
+        mask = (
+            df[COLUMN_MAPPING['title']].str.lower() == title.lower()
+        ) & (
+            df[COLUMN_MAPPING['artist']].str.lower() == artist.lower()
+        )
+
+        matches = df[mask]
+
+        if matches.empty:
+            return None
+
+        # Retornar la primera coincidencia
+        # row = matches.iloc[0]
+        return matches.index[0] 
+
 
     def get_suggestions(self, title: str, artist: str) -> List[Dict]:
         """
@@ -357,6 +380,9 @@ def search_songs_by_genre_paginated(genre_query: str = "", page: int = 1, per_pa
 def get_song_by_title_artist(title: str, artist: str) -> Optional[Dict]:
     """Función de conveniencia para obtener una canción específica"""
     return data_manager.get_song_by_title_artist(title, artist)
+def get_id_chi(title: str, artist: str) -> Optional[Dict]:
+    return data_manager.get_id(title,  artist)
+
 
 def get_suggestions(title: str, artist: str) -> List[Dict]:
     """Función de conveniencia para obtener sugerencias"""

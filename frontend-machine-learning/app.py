@@ -189,12 +189,25 @@ def main():
             st.error(f"Error cargando página de análisis: {e}")
             st.info("Verifica que la página esté funcionando correctamente.")
     elif page == "💡 Sugerencias":
-        try:
+        # try:
             from pages.suggestions import show_suggestions_page
-            show_suggestions_page()
-        except Exception as e:
-            st.error(f"Error cargando página de sugerencias: {e}")
-            st.info("Esta página está en desarrollo.")
+            import recomendaciones_2 as Rd
+            LIMIT_ = st.sidebar.number_input(
+                "Límite de canciones para método con clustering",
+                min_value=100,
+                max_value=100000,
+                value=1000,
+                step=100
+            )
+            modelo_embeddings = Rd.cargar_embeddings(LIMIT_)
+            vectores_finales = Rd.cargar_vectores_finales(modelo_embeddings, LIMIT_)
+            print(vectores_finales.shape)
+            df = Rd.cargar_dataset(vectores_finales, LIMIT_)
+            print("Df shape es: ",df.shape)
+            # show_suggestions_page()
+            Rd.show_suggestions_page_d(df, vectores_finales, LIMIT_)
+        # except Exception as e:
+            # st.error(f"Error cargando página de sugerencias: {e}")
 
 def show_home_page(df: pd.DataFrame = None):
     """Página de inicio"""
