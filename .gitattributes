@@ -1,8 +1,12 @@
-*.csv filter=lfs diff=lfs merge=lfs -text
-*.pkl filter=lfs diff=lfs merge=lfs -text
-*.h5 filter=lfs diff=lfs merge=lfs -text
-*.model filter=lfs diff=lfs merge=lfs -text
-data/ filter=lfs diff=lfs merge=lfs -text
-frontend-machine-learning/data/spotify_dataset_sin_duplicados_4.csv filter=lfs diff=lfs merge=lfs -text
-frontend-machine-learning/data/*.csv filter=lfs diff=lfs merge=lfs -text
+# *.csv filter=lfs diff=lfs merge=lfs -text
+# *.pkl filter=lfs diff=lfs merge=lfs -text
+# *.h5 filter=lfs diff=lfs merge=lfs -text
+# *.model filter=lfs diff=lfs merge=lfs -text
+# data/ filter=lfs diff=lfs merge=lfs -text
+# frontend-machine-learning/data/spotify_dataset_sin_duplicados_4.csv filter=lfs diff=lfs merge=lfs -text
+# frontend-machine-learning/data/*.csv filter=lfs diff=lfs merge=lfs -text
+# frontend-machine-learning/data/canciones_2_embeddings.txt filter=lfs diff=lfs merge=lfs -text
+
+# Solo estos dos archivos deben estar en Git LFS
 frontend-machine-learning/data/canciones_2_embeddings.txt filter=lfs diff=lfs merge=lfs -text
+frontend-machine-learning/data/spotify_dataset_sin_duplicados_4.csv filter=lfs diff=lfs merge=lfs -text
