@@ -235,12 +235,18 @@ def show_suggestions_page_d(df, vectores_finales, LIMIT_):
         id_song = None
         if by_id:
             id_song = song_id
-            st.info(f"Buscando recomendaciones para la canción con ID: {id_song}")
+            if id_song>=LIMIT_:
+                st.info("La canción seleccionada está fuera del límite, se eligió una canción aleatoria del dataset.")
+                id_song = random.randint(0, LIMIT_ - 1)
+                song_name = df.loc[song_id, 'song']
+            st.info(f"Buscando recomendaciones para la canción con ID: {song_id}")
         else:
             id_song = get_id_chi(song_name.strip(), artist_name.strip())
 
         if id_song is not None:
-            
+            if by_id: 
+                song_name = df.loc[song_id, 'song']
+
             if id_song >= LIMIT_:
                 st.info("La canción seleccionada está fuera del límite, se eligió una canción aleatoria del dataset.")
                 id_song = random.randint(0, LIMIT_ - 1)
