@@ -64,7 +64,8 @@ def cargar_dataset_LSH():
 @st.cache_resource(show_spinner="Cargando modelo de embeddings...")
 def cargar_embeddings(LIMIT_):
     modelo = KeyedVectors.load_word2vec_format(
-        os.path.join(DATAPATH, "canciones_2_embeddings.txt"),
+        f"{DATAPATH}/canciones_2_embeddings.txt",
+        # os.path.join(DATAPATH, "canciones_2_embeddings.txt"),
         binary=False,
         limit=LIMIT_
     )
