@@ -3,3 +3,11 @@
 node_modules/
 *.log
 .env
+frontend-machine-learning/myenv/
+frontend-machine-learning/__pycache__/
+
+venv/
+venv_frontend/
+*.egg-info/
+*.pyc
+__pycache__/
